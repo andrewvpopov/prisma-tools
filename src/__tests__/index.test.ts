@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const require = createRequire(import.meta.url);
 const {
   absoluteSqliteUrl,
+  appendSchemaArg,
   buildExecEnv,
   isNextBuildCommand,
   providerFromUrl,
@@ -83,6 +84,40 @@ describe('@andrewvpopov/prisma-tools', () => {
     expect(providerFromUrl('postgres://user@host/db', {})).toBe('postgresql');
     expect(providerFromUrl('postgresql://user@host/db', {})).toBe('postgresql');
     expect(providerFromUrl('file:./dev.db', { DATABASE_PROVIDER: 'postgres' })).toBe('postgresql');
+  });
+
+  it('appends the resolved schema for schema-aware Prisma commands', () => {
+    expect(appendSchemaArg(['generate'], 'prisma/schema.prisma')).toEqual([
+      'generate',
+      '--schema',
+      'prisma/schema.prisma',
+    ]);
+    expect(appendSchemaArg(['migrate', 'deploy'], 'prisma/postgres/schema.prisma')).toEqual([
+      'migrate',
+      'deploy',
+      '--schema',
+      'prisma/postgres/schema.prisma',
+    ]);
+    expect(appendSchemaArg(['db', 'push'], 'prisma/schema.prisma')).toEqual([
+      'db',
+      'push',
+      '--schema',
+      'prisma/schema.prisma',
+    ]);
+  });
+
+  it('does not append duplicate or unsupported schema args', () => {
+    expect(appendSchemaArg(['generate', '--schema', 'custom.prisma'], 'prisma/schema.prisma')).toEqual([
+      'generate',
+      '--schema',
+      'custom.prisma',
+    ]);
+    expect(appendSchemaArg(['generate', '--schema=custom.prisma'], 'prisma/schema.prisma')).toEqual([
+      'generate',
+      '--schema=custom.prisma',
+    ]);
+    expect(appendSchemaArg(['--help'], 'prisma/schema.prisma')).toEqual(['--help']);
+    expect(appendSchemaArg(['migrate', 'diff'], 'prisma/schema.prisma')).toEqual(['migrate', 'diff']);
   });
 
   it('allows consuming apps to customize env input and output names', () => {
@@ -176,5 +211,27 @@ describe('@andrewvpopov/prisma-tools', () => {
 
     expect(status).toBe(0);
     expect(fs.existsSync(databasePath)).toBe(true);
+  });
+
+  it('runs Prisma with the schema resolved from the selected provider', () => {
+    const cwd = makeTempDir();
+    writeProjectEnv(cwd, {
+      '.env.production': 'DATABASE_URL=postgresql://user:secret@db.example/app\n',
+    });
+    const calls: Array<{ command: string; args: string[] }> = [];
+
+    const status = runCli(['--prod', 'migrate', 'deploy'], {
+      cwd,
+      env: {},
+      spawnSync: (command: string, args: string[]) => {
+        calls.push({ command, args });
+        return { status: 0 };
+      },
+      stdout: { write: () => undefined },
+    });
+
+    expect(status).toBe(0);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].args).toEqual(['prisma', 'migrate', 'deploy', '--schema', 'prisma/postgres/schema.prisma']);
   });
 });

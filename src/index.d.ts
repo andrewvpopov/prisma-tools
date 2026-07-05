@@ -44,6 +44,9 @@ export function resolveMode(explicitMode?: string | null, env?: NodeJS.ProcessEn
 export function providerFromUrl(databaseUrl?: string, env?: NodeJS.ProcessEnv, envKeys?: string[]): PrismaProvider;
 export function absoluteSqliteUrl(databaseUrl: string | undefined, cwd: string): string | undefined;
 export function isNextBuildCommand(commandArgs: string[]): boolean;
+export function hasSchemaArg(prismaArgs: string[]): boolean;
+export function shouldAppendSchemaArg(prismaArgs: string[]): boolean;
+export function appendSchemaArg(prismaArgs: string[], schema: string): string[];
 export function buildExecEnv(commandArgs: string[], cwd: string, env?: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
 export function resolveContext(options?: {
   argv?: string[];

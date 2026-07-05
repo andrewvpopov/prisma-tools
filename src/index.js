@@ -199,6 +199,39 @@ function isNextBuildCommand(commandArgs) {
   );
 }
 
+function hasSchemaArg(prismaArgs) {
+  return prismaArgs.some((arg, index) => arg === '--schema' || arg.startsWith('--schema=') || prismaArgs[index - 1] === '--schema');
+}
+
+function shouldAppendSchemaArg(prismaArgs) {
+  const [command, subcommand] = prismaArgs;
+  if (!command || command.startsWith('-') || hasSchemaArg(prismaArgs)) {
+    return false;
+  }
+
+  if (command === 'generate' || command === 'validate' || command === 'format' || command === 'studio') {
+    return true;
+  }
+
+  if (command === 'migrate') {
+    return ['deploy', 'dev', 'reset', 'resolve', 'status'].includes(subcommand);
+  }
+
+  if (command === 'db') {
+    return ['pull', 'push'].includes(subcommand);
+  }
+
+  return false;
+}
+
+function appendSchemaArg(prismaArgs, schema) {
+  if (!shouldAppendSchemaArg(prismaArgs)) {
+    return prismaArgs;
+  }
+
+  return [...prismaArgs, '--schema', schema];
+}
+
 function absoluteSqliteUrl(databaseUrl, cwd) {
   if (!databaseUrl || !databaseUrl.startsWith('file:')) {
     return databaseUrl;
@@ -304,7 +337,8 @@ function runCli(argv = process.argv.slice(2), runtime = {}) {
   }
 
   const prisma = resolvePrismaBin(cwd, fsImpl);
-  const result = spawn(prisma.command, [...prisma.argsPrefix, ...options.prismaArgs], {
+  const prismaArgs = appendSchemaArg(options.prismaArgs, schema);
+  const result = spawn(prisma.command, [...prisma.argsPrefix, ...prismaArgs], {
     cwd,
     stdio: 'inherit',
     env,
@@ -319,10 +353,12 @@ function runCli(argv = process.argv.slice(2), runtime = {}) {
 
 module.exports = {
   absoluteSqliteUrl,
+  appendSchemaArg,
   buildExecEnv,
   defaultSqliteUrl,
   ensureSqliteDatabaseFile,
   firstEnvValue,
+  hasSchemaArg,
   isNextBuildCommand,
   loadEnvFile,
   mergeConfig,
@@ -331,5 +367,6 @@ module.exports = {
   resolveContext,
   resolveMode,
   runCli,
+  shouldAppendSchemaArg,
   sqliteDatabasePath,
 };

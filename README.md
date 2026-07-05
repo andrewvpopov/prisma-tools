@@ -16,7 +16,8 @@ normalization.
 - Detects `sqlite` or `postgresql` from `DATABASE_URL` or an explicit provider
   env var.
 - Selects the matching Prisma schema and migration directory.
-- Runs Prisma commands through the local project Prisma binary.
+- Runs Prisma commands through the local project Prisma binary with the
+  selected schema path.
 - Provides an `exec` command for child processes such as `next build`.
 - Converts relative SQLite URLs to absolute `file:` URLs for `next build`.
 - Forces `NODE_ENV=production` for `next build` without forcing production DB
@@ -115,6 +116,10 @@ npx prisma-tools migrate dev
 npx prisma-tools migrate status
 npx prisma-tools --prod migrate deploy
 ```
+
+For schema-aware Prisma commands, the wrapper appends `--schema <path>` using
+the selected provider. If the command already includes `--schema`, the wrapper
+keeps the caller-provided value.
 
 Run a child command through the wrapper:
 
