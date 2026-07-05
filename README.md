@@ -20,6 +20,13 @@ need to switch safely between SQLite and PostgreSQL.
 npm install github:andrewvpopov/prisma-tools#<commit-sha>
 ```
 
+For deployment environments that should not require Git/SSH credentials, pin the
+public GitHub archive URL instead:
+
+```sh
+npm install https://github.com/andrewvpopov/prisma-tools/archive/<commit-sha>.tar.gz
+```
+
 ## CLI
 
 ```sh

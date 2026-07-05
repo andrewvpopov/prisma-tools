@@ -4,6 +4,10 @@
   "description": "Reusable Prisma environment, schema, and command wrapper utilities",
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrewvpopov/prisma-tools.git"
+  },
   "bin": {
     "prisma-tools": "src/cli.js"
   },

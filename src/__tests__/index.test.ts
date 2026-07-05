@@ -34,7 +34,7 @@ afterEach(() => {
   }
 });
 
-describe('@bewks/prisma-tools', () => {
+describe('@andrewvpopov/prisma-tools', () => {
   it('resolves dev SQLite context from project env files without overriding caller env', () => {
     const cwd = makeTempDir();
     writeProjectEnv(cwd, {
