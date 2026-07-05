@@ -1,0 +1,25 @@
+{
+  "name": "@andrewvpopov/prisma-tools",
+  "version": "0.1.0",
+  "description": "Reusable Prisma environment, schema, and command wrapper utilities",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "bin": {
+    "prisma-tools": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vitest": "^4.0.18"
+  }
+}
