@@ -1,0 +1,27 @@
+# Shared-package CI — BWK-92 reference workflow.
+#
+# This is the plain-JS variant (no build step). TS packages that compile to a
+# committed dist/ add a `build` + dist-dirty-diff check before verify:pack —
+# see STANDARDS.md. Copy this file into each shared package repo and adjust the
+# node-version matrix only if a consumer needs it.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Consumer-side pack + install smoke
+        run: npm run verify:pack

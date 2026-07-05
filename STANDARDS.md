@@ -1,0 +1,70 @@
+# Shared Package Standards
+
+Reference for every `andrewvpopov/*` package consumed across bewks, stoki,
+smarthome, sano-os, and kira (Kira epic BWK-84 / BWK-92). This repo
+(`prisma-tools`) is the pilot; new package repos copy `.github/workflows/ci.yml`
+and `scripts/verify-pack.mjs` from here and adjust the require-smoke.
+
+## Distribution
+
+- Install via git tag: `npm install github:andrewvpopov/<pkg>#vX.Y.Z`.
+  No npm org, no registry.
+- **One package per repo.** The `github:` protocol installs the repo root.
+- **Consumers pin a tag**, never a branch or a bare SHA. Upgrading a consumer =
+  bump the tag in its `package.json` and reinstall.
+- Standalone repo is the **source of truth**. No vendored copies in app repos;
+  delete them when the app switches to the `github:` dependency.
+- Keep runtime dependencies near zero (dotenv-class only). No framework deps in
+  engine packages.
+
+## Source & build
+
+Two shapes, both valid:
+
+1. **Trivial glue (this repo):** plain JS + a hand-written `index.d.ts`. No
+   build step, no `dist/`. `main`/`types`/`bin` point at `src/`. Do not retrofit
+   TypeScript onto a package this small.
+2. **Non-trivial packages:** TypeScript source compiled with `tsc` to a
+   **committed** `dist/`. `main`/`types` point at `dist/`. Committing the build
+   output means `github:` installs need no install-time build (no `prepare`
+   script, no consumer-side compile). CI guarantees the committed `dist/` is not
+   stale (see below).
+
+## Versioning & tags
+
+- Semver. Bump `package.json` `version` and add a `CHANGELOG.md` entry in the
+  same commit that you tag.
+- **Tags are immutable.** Never move or delete a published tag — a moved tag
+  silently poisons consumer lockfiles that resolved it. Fix forward with a new
+  patch tag.
+- Tag format `vX.Y.Z` (matches the `#vX.Y.Z` install ref).
+
+## CI (required before tagging)
+
+`.github/workflows/ci.yml` runs on every PR and on `master`:
+
+1. `npm ci`
+2. `npm test` — unit tests.
+3. **`npm run verify:pack`** — packs the tarball, installs it into a throwaway
+   project, and requires it as a consumer would. Catches missing `files`, broken
+   `main`/`types`/`bin`, and deps that only resolve inside the source tree.
+4. **TS packages only:** `npm run build` then fail on a dirty `git diff --
+   dist/`. This is what keeps the committed `dist/` honest against the TS source.
+
+Never tag a commit whose CI is not green.
+
+## Release checklist
+
+1. Merge the change (green CI).
+2. Bump `version` + `CHANGELOG.md`; commit.
+3. `git tag vX.Y.Z && git push --tags`.
+4. In each consuming app: bump the `#vX.Y.Z` ref, reinstall, run the app's
+   affected flow (see the app's adoption ticket), note the version in the app
+   CHANGELOG.
+
+## The Pi deploy failure mode
+
+`npm ci` on the Raspberry Pi now reaches GitHub to resolve `github:` deps at
+deploy time. `deploy-kit` (BWK-86) must prefer lockfile/offline-cache installs
+and degrade gracefully when GitHub is unreachable, so a GitHub outage cannot
+break a deploy that changes no dependencies.
