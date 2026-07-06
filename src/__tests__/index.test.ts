@@ -12,6 +12,7 @@ const {
   isNextBuildCommand,
   providerFromUrl,
   resolveContext,
+  resolveMode,
   runCli,
 } = require('../index.js') as typeof import('../index');
 
@@ -95,6 +96,15 @@ describe('@andrewvpopov/prisma-tools', () => {
     ).toBe('postgresql');
     // Blank across all keys falls back to URL detection.
     expect(providerFromUrl('file:./dev.db', { APP_DATABASE_PROVIDER: '' }, envKeys)).toBe('sqlite');
+  });
+
+  it('resolveMode falls through a blank primary mode key to the secondary', () => {
+    const envKeys = ['APP_ENV', 'PRISMA_ENV'];
+    // Blank primary must defer to the secondary, not short-circuit to the default.
+    expect(resolveMode(undefined, { APP_ENV: '', PRISMA_ENV: 'prod' }, envKeys)).toBe('prod');
+    expect(resolveMode(undefined, { APP_ENV: '', PRISMA_ENV: 'dev' }, envKeys)).toBe('dev');
+    // Blank across all keys falls back to NODE_ENV.
+    expect(resolveMode(undefined, { APP_ENV: '', NODE_ENV: 'production' }, envKeys)).toBe('prod');
   });
 
   it('appends the resolved schema for schema-aware Prisma commands', () => {
