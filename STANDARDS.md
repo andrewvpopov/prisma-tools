@@ -80,9 +80,15 @@ Never tag a commit whose CI is not green.
 
 ## Release checklist
 
-1. Merge the change (green CI).
-2. Bump `version` + `CHANGELOG.md`; commit.
-3. `git tag vX.Y.Z && git push --tags`.
+`master` is protected (no direct pushes), so the version bump rides along in the
+change PR — not a separate post-merge commit.
+
+1. In the change PR, include the `version` bump + `CHANGELOG.md` entry.
+2. Merge when CI is green.
+3. `git tag vX.Y.Z <merge commit> && git push origin vX.Y.Z`. The tag-triggered
+   `release-guard` CI job asserts the tag equals `package.json` version and has a
+   CHANGELOG entry — if they drift, the tag build goes red. Tags are immutable;
+   if a tag is wrong, cut the next patch tag rather than moving it.
 4. In each consuming app: bump the `#vX.Y.Z` ref, reinstall, run the app's
    affected flow (see the app's adoption ticket), note the version in the app
    CHANGELOG.

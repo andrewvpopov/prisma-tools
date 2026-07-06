@@ -13,7 +13,7 @@
  * repo. Run locally with `npm run verify:pack`; CI runs the same command.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -24,22 +24,25 @@ function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8', ...opts });
 }
 
-// 1. Pack the tarball the way a publish/github install would.
-const packJson = run('npm', ['pack', '--json'], { cwd: repoRoot });
-const tarball = JSON.parse(packJson)[0].filename;
-const tarballPath = join(repoRoot, tarball);
-console.log(`[verify-pack] packed ${tarball}`);
-
-// 2. Install it into a throwaway consumer project.
 const scratch = mkdtempSync(join(tmpdir(), 'verify-pack-'));
+let tarballPath;
 let failed = false;
 try {
+  // 1. Pack the tarball the way a publish/github install would.
+  const packJson = run('npm', ['pack', '--json'], { cwd: repoRoot });
+  const tarball = JSON.parse(packJson)[0].filename;
+  tarballPath = join(repoRoot, tarball);
+  console.log(`[verify-pack] packed ${tarball}`);
+
+  // 2. Install it into a throwaway consumer project.
   writeFileSync(
     join(scratch, 'package.json'),
     JSON.stringify({ name: 'verify-pack-consumer', version: '0.0.0', private: true }, null, 2),
   );
   console.log(`[verify-pack] installing tarball into ${scratch}`);
   run('npm', ['install', '--no-audit', '--no-fund', tarballPath], { cwd: scratch });
+
+  const installedRoot = join(scratch, 'node_modules', pkg.name);
 
   // 3. Require it as a consumer would and assert the public surface resolves.
   const smoke = `
@@ -51,10 +54,19 @@ try {
   `;
   run('node', ['-e', smoke], { cwd: scratch, stdio: 'inherit' });
 
-  // 4. Assert the declared bin resolves to a real file.
+  // 4. Assert the declared bin resolves to a real, shipped file.
   const binSmoke = `require.resolve('${pkg.name}/${pkg.bin['prisma-tools'].replace(/^\.\//, '')}')`;
   run('node', ['-e', binSmoke], { cwd: scratch, stdio: 'inherit' });
   console.log('[verify-pack] bin resolves OK');
+
+  // 5. Assert the declared types file actually shipped (catches a `types` entry
+  //    left out of `files` — a broken TS consumer that a JS require wouldn't hit).
+  if (pkg.types) {
+    if (!existsSync(join(installedRoot, pkg.types))) {
+      throw new Error(`types file missing from package: ${pkg.types}`);
+    }
+    console.log(`[verify-pack] types file present: ${pkg.types}`);
+  }
 
   console.log('[verify-pack] PASS');
 } catch (err) {
@@ -62,7 +74,7 @@ try {
   console.error('[verify-pack] FAIL:', err.message);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
-  rmSync(tarballPath, { force: true });
+  if (tarballPath) rmSync(tarballPath, { force: true });
 }
 
 process.exit(failed ? 1 : 0);

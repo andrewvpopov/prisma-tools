@@ -3,6 +3,20 @@
 All notable changes to `@andrewvpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
+## 0.2.2
+
+Release-process hardening (from a Codex review of the pilot). No runtime API
+change; only `engines` is new for consumers.
+
+- CI now runs on `v*` tags with a `release-guard` job asserting the tag matches
+  `package.json` version and has a CHANGELOG entry — tags are the shipped
+  artifact, so they are gated.
+- CI runs on the engines floor (Node 20); added `engines.node >=20`.
+- `verify-pack` now asserts the declared `types` file actually ships and wraps
+  `npm pack` in the cleanup path so a failed run leaves no stray tarball.
+- Added a `resolveMode` blank-primary-key regression test alongside the
+  provider one.
+
 ## 0.2.1
 
 - Fix `firstEnvValue` to use truthy fallback: a primary env key that is defined
