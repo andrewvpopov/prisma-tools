@@ -1,7 +1,11 @@
 # Changelog
 
-All notable changes to `@andrewvpopov/prisma-tools`. Versions are git tags
+All notable changes to `@andrewpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
+
+## 0.2.3
+
+- Renamed package scope `@andrewvpopov/*` -> `@andrewpopov/*` after consolidating the GitHub org into the `andrewpopov` user. No runtime or API change; update imports and the `github:` install path to `andrewpopov/prisma-tools`.
 
 ## 0.2.2
 
