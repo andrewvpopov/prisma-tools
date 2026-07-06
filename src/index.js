@@ -99,9 +99,13 @@ function parseArgs(argv = []) {
 }
 
 function firstEnvValue(env, keys = []) {
+  // Truthy fallback, matching `env.A || env.B`: a key that is defined but blank
+  // ("") must fall through to the next key, not short-circuit. Consumers rely on
+  // this to layer a primary var over a secondary (e.g. BEWKS_ENV over PRISMA_ENV).
   for (const key of keys) {
-    if (env[key] !== undefined) {
-      return env[key];
+    const value = env[key];
+    if (value) {
+      return value;
     }
   }
 

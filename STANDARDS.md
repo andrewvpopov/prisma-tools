@@ -39,6 +39,31 @@ Two shapes, both valid:
   patch tag.
 - Tag format `vX.Y.Z` (matches the `#vX.Y.Z` install ref).
 
+## Branch protection (required on every repo)
+
+`master` is protected so nothing lands without a PR whose CI is green. Apply to
+each new package repo immediately after creating it:
+
+```sh
+gh api -X PUT repos/andrewvpopov/<pkg>/branches/master/protection \
+  -H "Accept: application/vnd.github+json" --input - <<'JSON'
+{
+  "required_status_checks": { "strict": true, "contexts": ["test"] },
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 0 },
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+JSON
+```
+
+- `enforce_admins: true` — the owner goes through PRs too; no direct pushes to
+  `master`.
+- `required_approving_review_count: 0` — a solo owner can't approve their own PR,
+  so requiring ≥1 would deadlock. The gate is "PR + green CI + owner clicks
+  merge." If a second reviewer or a review bot is ever added, raise this to 1.
+
 ## CI (required before tagging)
 
 `.github/workflows/ci.yml` runs on every PR and on `master`:
