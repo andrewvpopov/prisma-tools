@@ -3,7 +3,7 @@
 # This is the plain-JS variant (no build step). TS packages that compile to a
 # committed dist/ add a `build` + dist-dirty-diff check before verify:pack —
 # see STANDARDS.md. Copy this file into each shared package repo and adjust the
-# require-smoke and the node matrix only if a consumer needs it.
+# require-smoke only if a consumer needs it.
 name: CI
 
 on:
@@ -14,17 +14,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Single job named `test` so it stays the stable required status check for
+  # branch protection. Runs the engines floor (Node 20); this package has no
+  # version-specific behavior, so passing on the floor covers newer consumers. If
+  # a package ever needs a real version matrix, add a `ci-success` aggregation job
+  # (needs: [test]) and require THAT — a matrix renames `test` to `test (20)` and
+  # silently breaks a required context of `test`.
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Lowest supported (engines floor) + the version every consumer runs.
-        node-version: ['20', '24']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
       - run: npm ci
       - name: Unit tests
         run: npm test
