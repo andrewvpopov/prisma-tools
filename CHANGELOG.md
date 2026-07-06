@@ -3,6 +3,15 @@
 All notable changes to `@andrewvpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
+## 0.2.1
+
+- Fix `firstEnvValue` to use truthy fallback: a primary env key that is defined
+  but blank (`""`) now falls through to the next key instead of short-circuiting,
+  matching `env.A || env.B`. Restores the exact fallback behavior consumers that
+  layer a primary var over a secondary (e.g. bewks' `BEWKS_ENV` over `PRISMA_ENV`)
+  depend on. Caught in the bewks adoption review (BWK-87). No effect on non-blank
+  values.
+
 ## 0.2.0
 
 Established as the reconciled source of truth over the bewks vendored copy

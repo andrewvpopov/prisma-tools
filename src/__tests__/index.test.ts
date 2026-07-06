@@ -86,6 +86,17 @@ describe('@andrewvpopov/prisma-tools', () => {
     expect(providerFromUrl('file:./dev.db', { DATABASE_PROVIDER: 'postgres' })).toBe('postgresql');
   });
 
+  it('falls through a blank primary env key to the secondary (truthy fallback)', () => {
+    // A primary key set to "" must not short-circuit; it should defer to the
+    // next key, matching `env.PRIMARY || env.SECONDARY`.
+    const envKeys = ['APP_DATABASE_PROVIDER', 'DATABASE_PROVIDER'];
+    expect(
+      providerFromUrl('file:./dev.db', { APP_DATABASE_PROVIDER: '', DATABASE_PROVIDER: 'postgresql' }, envKeys),
+    ).toBe('postgresql');
+    // Blank across all keys falls back to URL detection.
+    expect(providerFromUrl('file:./dev.db', { APP_DATABASE_PROVIDER: '' }, envKeys)).toBe('sqlite');
+  });
+
   it('appends the resolved schema for schema-aware Prisma commands', () => {
     expect(appendSchemaArg(['generate'], 'prisma/schema.prisma')).toEqual([
       'generate',
