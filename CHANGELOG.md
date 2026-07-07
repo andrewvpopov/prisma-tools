@@ -3,6 +3,64 @@
 All notable changes to `@andrewvpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
+## 0.3.0
+
+Maturation pass: complete type coverage, a type-contract CI check, a
+Windows/Node compat matrix, and several small robustness fixes surfaced while
+writing tests for the previously-untested half of the surface. Additive and
+back-compatible.
+
+- **Fix:** `absoluteSqliteUrl` no longer truncates a `DATABASE_URL` query
+  string at a second `?` (e.g. `file:./x.db?a=1?b=2&c=3`). Both
+  `absoluteSqliteUrl` and `sqliteDatabasePath` now share one internal
+  `parseSqliteFileUrl` helper; `sqliteDatabasePath` behavior is unchanged
+  (it only ever used the first segment).
+- **Fix:** `providerFromUrl` now throws a clear error
+  (`Unsupported explicit database provider "<x>". Expected sqlite, postgres,
+  or postgresql.`) for an explicit provider env value that is set but
+  unrecognized (e.g. `DATABASE_PROVIDER=mongo`), instead of silently falling
+  through to URL detection. A blank (`""`) explicit value still falls through
+  as before.
+- **Fix:** `defaultSqliteUrl` no longer risks crashing on a partial config
+  object (e.g. `{}`); it now falls back to
+  `DEFAULT_CONFIG.defaultSqlitePath` when `config.defaultSqlitePath` is unset.
+- **Change:** `resolveMode` now normalizes `production`→`prod` and
+  `development`→`dev` for an explicit mode, and passes `prod`/`dev` through
+  unchanged. Any other explicit value (e.g. a typo) is no longer returned
+  verbatim as a mode — it falls through to env/`NODE_ENV` resolution.
+  `parseArgs` already only ever produced `dev`/`prod`, so this only affects
+  direct programmatic callers of `resolveMode`.
+- `resolvePrismaBin` (internal, not exported) is now platform-injectable:
+  `runCli`'s `runtime.platform` (defaulting to `process.platform`) selects the
+  `.cmd` binary names on Windows, making the Windows code path testable and
+  exercised in CI.
+- Completed `src/index.d.ts`: added the previously-missing
+  `defaultSqliteUrl`, `ensureSqliteDatabaseFile`, `loadEnvFile`, and
+  `sqliteDatabasePath` declarations; added `options` to
+  `ResolvedPrismaToolsContext`; replaced the untyped `runCli` runtime
+  parameter with a real `PrismaToolsRuntime` interface. No exports were
+  removed or changed.
+- Added `npm run verify:types` (`tsc --noEmit` against
+  `scripts/types-consumer.ts`), a consumer-style contract test that fails CI
+  if `src/index.d.ts` drifts from the JS surface. Added `typescript` as a
+  devDependency. `verify:types` runs inside the required `test` CI job.
+- CI: added a `compat` job (Ubuntu Node 20/22/24 + one Windows Node 20 leg)
+  and a `ci-success` aggregation job. `compat`/`ci-success` are advisory for
+  now — promote `ci-success` to the required branch-protection check (and
+  drop `test`) if/when the full matrix should gate merges.
+- Substantially expanded `src/__tests__/index.test.ts` to cover
+  `parseArgs`, `sqliteDatabasePath`, `defaultSqliteUrl`,
+  `ensureSqliteDatabaseFile`, `loadEnvFile`, `mergeConfig`, `hasSchemaArg`/
+  `shouldAppendSchemaArg`, the `resolveContext` mutation/`PRISMA_ENV_FILE`/
+  default-`DATABASE_URL` contract, `runCli`'s `exec` error paths, and
+  `resolvePrismaBin`'s platform branches (indirectly, via `runCli`).
+- README: install instructions now lead with a tag pin
+  (`github:andrewvpopov/prisma-tools#vX.Y.Z`); the archive-URL fallback (for
+  environments without Git/SSH credentials) now points at a tag archive
+  instead of a commit SHA. Documented the `resolveContext`/`runCli` env
+  mutation contract and added a **Non-goals** section (no MySQL, no
+  `migrate diff` schema handling, no monorepo/multi-schema support).
+
 ## 0.2.2
 
 Release-process hardening (from a Codex review of the pilot). No runtime API

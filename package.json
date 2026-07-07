@@ -1,6 +1,6 @@
 {
   "name": "@andrewvpopov/prisma-tools",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Reusable Prisma environment, schema, and command wrapper utilities",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -21,13 +21,15 @@
   "license": "MIT",
   "scripts": {
     "test": "vitest run",
-    "verify:pack": "node scripts/verify-pack.mjs"
+    "verify:pack": "node scripts/verify-pack.mjs",
+    "verify:types": "tsc --noEmit -p tsconfig.types.json"
   },
   "dependencies": {
     "dotenv": "^16.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }
 }

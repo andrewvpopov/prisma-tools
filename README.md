@@ -27,24 +27,18 @@ normalization.
 
 ## Install From GitHub
 
-Use a commit pin. That keeps consuming apps reproducible without publishing this
-package to npm.
+Pin a released tag. That keeps consuming apps reproducible without publishing
+this package to npm, and tags are immutable (see STANDARDS.md).
 
 ```sh
-npm install github:andrewvpopov/prisma-tools#<commit-sha>
+npm install github:andrewvpopov/prisma-tools#v0.3.0
 ```
 
-For deployment environments that should not require Git/SSH credentials, pin the
-public GitHub archive URL instead:
+For deployment environments that should not require Git/SSH credentials, pin
+the public GitHub archive URL for the same tag instead:
 
 ```sh
-npm install https://github.com/andrewvpopov/prisma-tools/archive/<commit-sha>.tar.gz
-```
-
-Example:
-
-```sh
-npm install https://github.com/andrewvpopov/prisma-tools/archive/18f27bf56a217be824e3f1a8d77d62b0ba2aaf16.tar.gz
+npm install https://github.com/andrewvpopov/prisma-tools/archive/refs/tags/v0.3.0.tar.gz
 ```
 
 ## Expected Project Layout
@@ -268,9 +262,36 @@ runCli(['generate'], {
 });
 ```
 
+### Contract: `resolveContext`/`runCli` mutate the passed `env`
+
+`resolveContext` (and, through it, `runCli`) **mutates the `env` object you
+pass in.** It loads values from `.env` / the mode-specific env file into `env`,
+and writes the resolved `mode` and `provider` back onto `env` (via
+`config.outputEnv.mode` / `config.outputEnv.provider`, unless you set those to
+`null`). This is intentional: it lets a caller inspect the resolved
+mode/provider afterward and lets child processes started later in the same
+process (e.g. via `exec`) see the loaded env values. If you need to keep the
+caller's original env untouched, pass a copy (`{ ...process.env }`) instead of
+the live object.
+
+## Non-goals
+
+This package intentionally does not try to do everything a full Prisma
+tooling layer might:
+
+- **No MySQL support.** Only `sqlite` and `postgresql`/`postgres` are
+  recognized providers; anything else throws.
+- **No `migrate diff` schema handling.** `migrate diff` is deliberately
+  excluded from schema-arg auto-appending (see `shouldAppendSchemaArg`) since
+  its schema semantics differ from the other `migrate` subcommands.
+- **No monorepo / multi-schema support.** One SQLite schema and one PostgreSQL
+  schema per config; apps with more complex layouts should wrap this package
+  rather than ask it to grow that capability.
+
 ## Notes For Consumers
 
-- Keep the dependency pinned to a commit SHA or archive URL.
+- Keep the dependency pinned to a released tag (`#vX.Y.Z`) or the matching
+  archive URL.
 - Re-run `npm install` in each consuming app after changing the pin.
 - Prefer a local shim when an app needs stable compatibility env names.
 - Keep schema and migration paths explicit in config if your project layout does
