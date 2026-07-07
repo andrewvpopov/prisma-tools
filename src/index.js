@@ -113,8 +113,14 @@ function firstEnvValue(env, keys = []) {
 }
 
 function resolveMode(explicitMode, env = process.env, envKeys = DEFAULT_CONFIG.envKeys.mode) {
-  if (explicitMode) {
-    return explicitMode;
+  // Only recognized explicit values are normalized and returned directly; any
+  // other truthy value (e.g. a typo'd or app-specific mode string) is NOT an
+  // arbitrary mode — it falls through to env/NODE_ENV resolution below.
+  if (explicitMode === 'prod' || explicitMode === 'production') {
+    return 'prod';
+  }
+  if (explicitMode === 'dev' || explicitMode === 'development') {
+    return 'dev';
   }
 
   const envMode = firstEnvValue(env, envKeys);
@@ -129,9 +135,19 @@ function resolveMode(explicitMode, env = process.env, envKeys = DEFAULT_CONFIG.e
 }
 
 function providerFromUrl(databaseUrl, env = process.env, envKeys = DEFAULT_CONFIG.envKeys.provider) {
+  // firstEnvValue already applies the truthy-fallback rule across envKeys, so a
+  // blank ('') explicit provider falls through to the next key and, if every
+  // key is blank/unset, explicitProvider is undefined here (URL detection
+  // below). Only a SET-BUT-UNRECOGNIZED explicit value throws.
   const explicitProvider = firstEnvValue(env, envKeys);
-  if (explicitProvider === 'sqlite' || explicitProvider === 'postgresql' || explicitProvider === 'postgres') {
-    return explicitProvider === 'postgres' ? 'postgresql' : explicitProvider;
+  if (explicitProvider) {
+    if (explicitProvider === 'sqlite' || explicitProvider === 'postgresql' || explicitProvider === 'postgres') {
+      return explicitProvider === 'postgres' ? 'postgresql' : explicitProvider;
+    }
+
+    throw new Error(
+      `Unsupported explicit database provider "${explicitProvider}". Expected sqlite, postgres, or postgresql.`,
+    );
   }
 
   if (!databaseUrl || databaseUrl.startsWith('file:')) {
@@ -145,18 +161,33 @@ function providerFromUrl(databaseUrl, env = process.env, envKeys = DEFAULT_CONFI
   throw new Error('Unsupported DATABASE_URL scheme. Expected file:, postgres://, or postgresql://.');
 }
 
-function resolvePrismaBin(cwd, fsImpl = fs) {
-  const binName = process.platform === 'win32' ? 'prisma.cmd' : 'prisma';
+function resolvePrismaBin(cwd, fsImpl = fs, platform = process.platform) {
+  const binName = platform === 'win32' ? 'prisma.cmd' : 'prisma';
   const localBin = path.resolve(cwd, 'node_modules', '.bin', binName);
   if (fsImpl.existsSync(localBin)) {
     return { command: localBin, argsPrefix: [] };
   }
 
-  return { command: process.platform === 'win32' ? 'npx.cmd' : 'npx', argsPrefix: ['prisma'] };
+  return { command: platform === 'win32' ? 'npx.cmd' : 'npx', argsPrefix: ['prisma'] };
 }
 
 function defaultSqliteUrl(cwd, config = DEFAULT_CONFIG) {
-  return `file:${path.resolve(cwd, config.defaultSqlitePath)}`;
+  // Defensive: tolerate a partial config object (e.g. `{}`) instead of crashing
+  // on `path.resolve(cwd, undefined)`.
+  const defaultSqlitePath = (config && config.defaultSqlitePath) || DEFAULT_CONFIG.defaultSqlitePath;
+  return `file:${path.resolve(cwd, defaultSqlitePath)}`;
+}
+
+// Internal helper shared by absoluteSqliteUrl and sqliteDatabasePath. Splits a
+// `file:` URL's remainder on `?`, treating the first segment as the path and
+// rejoining everything after it (including any further `?`) as the query, so a
+// second `?` in the query string is preserved rather than dropped.
+function parseSqliteFileUrl(databaseUrl) {
+  const [rawPath, ...queryParts] = databaseUrl.slice('file:'.length).split('?');
+  return {
+    rawPath,
+    query: queryParts.length > 0 ? queryParts.join('?') : undefined,
+  };
 }
 
 function sqliteDatabasePath(databaseUrl, schemaPath) {
@@ -164,7 +195,7 @@ function sqliteDatabasePath(databaseUrl, schemaPath) {
     return null;
   }
 
-  const rawPath = databaseUrl.slice('file:'.length).split('?')[0];
+  const { rawPath } = parseSqliteFileUrl(databaseUrl);
   if (!rawPath || rawPath === ':memory:') {
     return null;
   }
@@ -241,13 +272,13 @@ function absoluteSqliteUrl(databaseUrl, cwd) {
     return databaseUrl;
   }
 
-  const [rawPath, queryString] = databaseUrl.slice('file:'.length).split('?', 2);
+  const { rawPath, query } = parseSqliteFileUrl(databaseUrl);
   if (!rawPath || rawPath === ':memory:' || path.isAbsolute(rawPath)) {
     return databaseUrl;
   }
 
-  const query = queryString === undefined ? '' : `?${queryString}`;
-  return `file:${path.resolve(cwd, rawPath)}${query}`;
+  const queryPart = query === undefined ? '' : `?${query}`;
+  return `file:${path.resolve(cwd, rawPath)}${queryPart}`;
 }
 
 function buildExecEnv(commandArgs, cwd, env = process.env) {
@@ -340,7 +371,7 @@ function runCli(argv = process.argv.slice(2), runtime = {}) {
     return result.status ?? 1;
   }
 
-  const prisma = resolvePrismaBin(cwd, fsImpl);
+  const prisma = resolvePrismaBin(cwd, fsImpl, runtime.platform || process.platform);
   const prismaArgs = appendSchemaArg(options.prismaArgs, schema);
   const result = spawn(prisma.command, [...prisma.argsPrefix, ...prismaArgs], {
     cwd,
