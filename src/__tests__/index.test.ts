@@ -664,6 +664,7 @@ describe('resolvePrismaBin (indirect via runCli)', () => {
     const status = runCli(['generate'], {
       cwd,
       env: {},
+      platform: 'linux', // pin so this non-win32 assertion is host-independent (see the win32 test below)
       fs: { existsSync: (p: string) => p === localBinPath },
       spawnSync: (command: string, args: string[]) => {
         calls.push({ command, args });
@@ -683,6 +684,7 @@ describe('resolvePrismaBin (indirect via runCli)', () => {
     runCli(['generate'], {
       cwd,
       env: {},
+      platform: 'linux', // pin so this non-win32 assertion is host-independent (see the win32 test below)
       fs: { existsSync: () => false },
       spawnSync: (command: string, args: string[]) => {
         calls.push({ command, args });
