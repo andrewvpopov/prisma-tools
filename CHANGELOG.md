@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@andrewvpopov/prisma-tools`. Versions are git tags
+All notable changes to `@andrewpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
 ## 0.3.0
@@ -55,11 +55,15 @@ back-compatible.
   default-`DATABASE_URL` contract, `runCli`'s `exec` error paths, and
   `resolvePrismaBin`'s platform branches (indirectly, via `runCli`).
 - README: install instructions now lead with a tag pin
-  (`github:andrewvpopov/prisma-tools#vX.Y.Z`); the archive-URL fallback (for
+  (`github:andrewpopov/prisma-tools#vX.Y.Z`); the archive-URL fallback (for
   environments without Git/SSH credentials) now points at a tag archive
   instead of a commit SHA. Documented the `resolveContext`/`runCli` env
   mutation contract and added a **Non-goals** section (no MySQL, no
   `migrate diff` schema handling, no monorepo/multi-schema support).
+
+## 0.2.3
+
+- Renamed package scope `@andrewvpopov/*` -> `@andrewpopov/*` after consolidating the GitHub org into the `andrewpopov` user. No runtime or API change; update imports and the `github:` install path to `andrewpopov/prisma-tools`.
 
 ## 0.2.2
 

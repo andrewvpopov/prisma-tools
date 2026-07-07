@@ -1,4 +1,4 @@
-# @andrewvpopov/prisma-tools
+# @andrewpopov/prisma-tools
 
 Reusable Prisma environment and command wrapper utilities for apps that need a
 predictable way to run Prisma against SQLite in development and PostgreSQL in
@@ -31,14 +31,14 @@ Pin a released tag. That keeps consuming apps reproducible without publishing
 this package to npm, and tags are immutable (see STANDARDS.md).
 
 ```sh
-npm install github:andrewvpopov/prisma-tools#v0.3.0
+npm install github:andrewpopov/prisma-tools#v0.3.0
 ```
 
 For deployment environments that should not require Git/SSH credentials, pin
 the public GitHub archive URL for the same tag instead:
 
 ```sh
-npm install https://github.com/andrewvpopov/prisma-tools/archive/refs/tags/v0.3.0.tar.gz
+npm install https://github.com/andrewpopov/prisma-tools/archive/refs/tags/v0.3.0.tar.gz
 ```
 
 ## Expected Project Layout
@@ -161,7 +161,7 @@ names:
 ```js
 #!/usr/bin/env node
 
-const { runCli } = require('@andrewvpopov/prisma-tools');
+const { runCli } = require('@andrewpopov/prisma-tools');
 
 const config = {
   envKeys: {
@@ -240,7 +240,7 @@ const {
   resolveContext,
   resolveMode,
   runCli,
-} = require('@andrewvpopov/prisma-tools');
+} = require('@andrewpopov/prisma-tools');
 ```
 
 Common uses:
