@@ -1,6 +1,6 @@
 {
   "name": "@andrewpopov/prisma-tools",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reusable Prisma environment, schema, and command wrapper utilities",
   "main": "src/index.js",
   "types": "src/index.d.ts",

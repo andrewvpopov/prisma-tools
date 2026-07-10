@@ -3,6 +3,29 @@
 All notable changes to `@andrewpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
+## 0.4.0
+
+Conformance with the shared package standards
+(`agent_tools/knowledge/shared-package-standards.md`), standard 3: **bound every
+external command with a timeout.**
+
+- **Fix — spawned commands are now bounded.** Neither `prisma-tools exec <cmd>`
+  nor the `prisma` invocation passed a process timeout, so a hung
+  `prisma migrate deploy` or `next build` blocked a deploy indefinitely —
+  `deploy-kit` drives both from its migrate/build hooks on the Pi. The bound is
+  injected once at the single `spawnSync` choke point rather than at each call
+  site. Default **30 minutes** (`next build` on a Pi is legitimately slow),
+  `killSignal: 'SIGKILL'`; configurable via `runtime.commandTimeoutMs` and
+  `PRISMA_TOOLS_COMMAND_TIMEOUT_MS`. An explicit per-call option still wins.
+- **Fix — a timed-out command now says so.** `spawnSync` reports a timeout as
+  `result.error` with code `ETIMEDOUT`, which both call sites rethrew raw,
+  telling the operator nothing about which command hung. Both now go through one
+  handler that names the command and the bound. Non-timeout spawn errors are
+  rethrown unchanged.
+
+No CLI flag: `prisma-tools` passes unrecognized arguments through to `prisma`, so
+a new flag could collide with a prisma option.
+
 ## 0.3.0
 
 Maturation pass: complete type coverage, a type-contract CI check, a

@@ -31,7 +31,7 @@ Pin a released tag. That keeps consuming apps reproducible without publishing
 this package to npm, and tags are immutable (see STANDARDS.md).
 
 ```sh
-npm install github:andrewpopov/prisma-tools#v0.3.0
+npm install github:andrewpopov/prisma-tools#v0.4.0
 ```
 
 For deployment environments that should not require Git/SSH credentials, pin
