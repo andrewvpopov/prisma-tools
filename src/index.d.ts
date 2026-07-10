@@ -48,12 +48,31 @@ export interface PrismaToolsRuntime {
   spawnSync?: (
     command: string,
     args: string[],
-    options: { cwd: string; stdio: 'inherit'; env: NodeJS.ProcessEnv },
-  ) => { status: number | null; error?: Error };
+    options: {
+      cwd: string;
+      stdio: 'inherit';
+      env: NodeJS.ProcessEnv;
+      /** Injected by runCli: every spawned command is bounded. */
+      timeout: number;
+      killSignal: 'SIGKILL';
+    },
+  ) => { status?: number | null; error?: NodeJS.ErrnoException };
   stdout?: { write(chunk: string): void };
   config?: PrismaToolsConfig;
   platform?: NodeJS.Platform;
+  /** Process timeout applied to every spawned command. Overrides
+   * `PRISMA_TOOLS_COMMAND_TIMEOUT_MS`; defaults to `DEFAULT_COMMAND_TIMEOUT_MS`. */
+  commandTimeoutMs?: number | string | null;
 }
+
+/** Default bound on every spawned command (30 minutes). Generous because
+ * `next build` on a Raspberry Pi is legitimately slow. */
+export const DEFAULT_COMMAND_TIMEOUT_MS: number;
+
+export function resolveCommandTimeoutMs(
+  value?: number | string | null,
+  env?: NodeJS.ProcessEnv,
+): number;
 
 export function parseArgs(argv: string[]): ParsedPrismaToolsArgs;
 export function firstEnvValue(env: NodeJS.ProcessEnv, keys?: string[]): string | undefined;

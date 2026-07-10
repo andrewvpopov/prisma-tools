@@ -4,6 +4,8 @@
 //
 // It exercises the public API the way a real consumer (bewks, sano, …) does.
 import {
+  DEFAULT_COMMAND_TIMEOUT_MS,
+  resolveCommandTimeoutMs,
   absoluteSqliteUrl,
   appendSchemaArg,
   buildExecEnv,
@@ -101,3 +103,13 @@ export const _contract = {
   context,
   status,
 };
+
+// Standard 3: every spawned command is bounded, and the bound is configurable.
+const _defaultBound: number = DEFAULT_COMMAND_TIMEOUT_MS;
+const _resolved: number = resolveCommandTimeoutMs(30_000, {});
+const _fromEnv: number = resolveCommandTimeoutMs(undefined, { PRISMA_TOOLS_COMMAND_TIMEOUT_MS: '60000' });
+
+// A consumer may tighten the bound for a fast command.
+runCli(['migrate', 'deploy'], { cwd: '/srv/app', commandTimeoutMs: 60_000 });
+
+export const _timeoutContract = { _defaultBound, _resolved, _fromEnv };

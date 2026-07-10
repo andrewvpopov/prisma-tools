@@ -6,6 +6,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const {
+  DEFAULT_COMMAND_TIMEOUT_MS,
+  resolveCommandTimeoutMs,
   absoluteSqliteUrl,
   appendSchemaArg,
   buildExecEnv,
@@ -739,4 +741,100 @@ describe('absoluteSqliteUrl second-? bug fix (parseSqliteFileUrl)', () => {
     const cwd = makeTempDir();
     expect(absoluteSqliteUrl('file:./x.db?a=1?b=2&c=3', cwd)).toBe(`file:${path.resolve(cwd, 'x.db')}?a=1?b=2&c=3`);
   });
+
+  it('bounds every spawned command with a timeout (standard 3)', () => {
+    // A hung `prisma migrate deploy` or `next build` would otherwise block a
+    // deploy forever. The bound is injected once at the spawn choke point.
+    const cwd = makeTempDir();
+    writeProjectEnv(cwd, { '.env.local': 'DATABASE_URL=file:./prisma/dev.db\n' });
+    const seen: Array<Record<string, unknown>> = [];
+
+    runCli(['migrate', 'deploy'], {
+      cwd,
+      env: {},
+      spawnSync: (_c: string, _a: string[], options: Record<string, unknown>) => {
+        seen.push(options);
+        return { status: 0 };
+      },
+      stdout: { write: () => undefined },
+    });
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0].timeout).toBe(DEFAULT_COMMAND_TIMEOUT_MS);
+    expect(seen[0].killSignal).toBe('SIGKILL');
+    // The per-call options survive alongside the injected bound.
+    expect(seen[0].stdio).toBe('inherit');
+  });
+
+  it('command timeout is configurable, explicit runtime value beating the env var', () => {
+    const cwd = makeTempDir();
+    writeProjectEnv(cwd, { '.env.local': 'DATABASE_URL=file:./prisma/dev.db\n' });
+    const seen: number[] = [];
+    const spy = (_c: string, _a: string[], o: Record<string, unknown>) => {
+      seen.push(o.timeout as number);
+      return { status: 0 };
+    };
+
+    runCli(['migrate', 'deploy'], { cwd, env: {}, spawnSync: spy, commandTimeoutMs: 4321, stdout: { write: () => undefined } });
+    expect(seen.at(-1)).toBe(4321);
+
+    runCli(['migrate', 'deploy'], {
+      cwd,
+      env: { PRISMA_TOOLS_COMMAND_TIMEOUT_MS: '9999' },
+      spawnSync: spy,
+      stdout: { write: () => undefined },
+    });
+    expect(seen.at(-1)).toBe(9999);
+
+    runCli(['migrate', 'deploy'], {
+      cwd,
+      env: { PRISMA_TOOLS_COMMAND_TIMEOUT_MS: '9999' },
+      spawnSync: spy,
+      commandTimeoutMs: 11,
+      stdout: { write: () => undefined },
+    });
+    expect(seen.at(-1)).toBe(11);
+  });
+
+  it('resolveCommandTimeoutMs rejects non-positive or non-integer values', () => {
+    expect(resolveCommandTimeoutMs(undefined, {})).toBe(DEFAULT_COMMAND_TIMEOUT_MS);
+    expect(resolveCommandTimeoutMs('', {})).toBe(DEFAULT_COMMAND_TIMEOUT_MS);
+    expect(() => resolveCommandTimeoutMs(0, {})).toThrow(/commandTimeoutMs/);
+    expect(() => resolveCommandTimeoutMs('1.5', {})).toThrow(/commandTimeoutMs/);
+    expect(() => resolveCommandTimeoutMs(undefined, { PRISMA_TOOLS_COMMAND_TIMEOUT_MS: 'x' })).toThrow(
+      /PRISMA_TOOLS_COMMAND_TIMEOUT_MS/,
+    );
+  });
+
+  it('a timed-out command names the command and the bound instead of a raw errno', () => {
+    const cwd = makeTempDir();
+    writeProjectEnv(cwd, { '.env.local': 'DATABASE_URL=file:./prisma/dev.db\n' });
+    const timedOut = Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' });
+
+    expect(() =>
+      runCli(['exec', 'npx', 'next', 'build'], {
+        cwd,
+        env: {},
+        commandTimeoutMs: 1500,
+        spawnSync: () => ({ error: timedOut }),
+        stdout: { write: () => undefined },
+      }),
+    ).toThrow(/npx next build.*1500ms.*PRISMA_TOOLS_COMMAND_TIMEOUT_MS/s);
+  });
+
+  it('a non-timeout spawn error is rethrown unchanged', () => {
+    const cwd = makeTempDir();
+    writeProjectEnv(cwd, { '.env.local': 'DATABASE_URL=file:./prisma/dev.db\n' });
+    const enoent = Object.assign(new Error('spawnSync ENOENT'), { code: 'ENOENT' });
+
+    expect(() =>
+      runCli(['migrate', 'deploy'], {
+        cwd,
+        env: {},
+        spawnSync: () => ({ error: enoent }),
+        stdout: { write: () => undefined },
+      }),
+    ).toThrow(enoent);
+  });
+
 });

@@ -330,12 +330,63 @@ function resolveContext({ argv = [], cwd = process.cwd(), env = process.env, con
   };
 }
 
+// `next build` on a Pi is legitimately slow, so the default bound is generous.
+// Tune with `runtime.commandTimeoutMs` or PRISMA_TOOLS_COMMAND_TIMEOUT_MS.
+// No CLI flag: prisma-tools passes unrecognized args through to prisma, so a new
+// flag could collide with a prisma option.
+const DEFAULT_COMMAND_TIMEOUT_MS = 30 * 60 * 1000;
+
+function resolveCommandTimeoutMs(value, env = process.env) {
+  const read = (raw, label) => {
+    if (raw === undefined || raw === null || raw === '') {
+      return null;
+    }
+    const text = String(raw).trim();
+    if (!/^\d+$/.test(text)) {
+      throw new Error(`${label} must be an integer >= 1 (milliseconds)`);
+    }
+    const parsed = Number.parseInt(text, 10);
+    if (parsed < 1) {
+      throw new Error(`${label} must be an integer >= 1 (milliseconds)`);
+    }
+    return parsed;
+  };
+
+  return (
+    read(value, 'commandTimeoutMs') ??
+    read(env.PRISMA_TOOLS_COMMAND_TIMEOUT_MS, 'PRISMA_TOOLS_COMMAND_TIMEOUT_MS') ??
+    DEFAULT_COMMAND_TIMEOUT_MS
+  );
+}
+
+// spawnSync reports a timeout as result.error with code ETIMEDOUT — rethrowing it
+// raw gives the operator no idea which command hung or what the bound was.
+function assertSpawnSucceeded(result, command, commandTimeoutMs) {
+  if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      throw new Error(
+        `\`${command}\` exceeded the ${commandTimeoutMs}ms command timeout and was killed. ` +
+          `Raise it with PRISMA_TOOLS_COMMAND_TIMEOUT_MS if the command is legitimately slow.`
+      );
+    }
+    throw result.error;
+  }
+}
+
 function runCli(argv = process.argv.slice(2), runtime = {}) {
   const cwd = runtime.cwd || process.cwd();
   const env = runtime.env || process.env;
   const fsImpl = runtime.fs || fs;
-  const spawn = runtime.spawnSync || spawnSync;
   const stdout = runtime.stdout || process.stdout;
+
+  // Bound every spawned command. A hung `prisma migrate deploy` or `next build`
+  // would otherwise block a deploy forever — deploy-kit drives both from its
+  // migrate/build hooks on the Pi. The bound is injected once, here, rather than
+  // at each call site: a call site that forgets it is the failure being fixed.
+  const commandTimeoutMs = resolveCommandTimeoutMs(runtime.commandTimeoutMs, env);
+  const baseSpawn = runtime.spawnSync || spawnSync;
+  const spawn = (command, args, options = {}) =>
+    baseSpawn(command, args, { timeout: commandTimeoutMs, killSignal: 'SIGKILL', ...options });
   const context = resolveContext({ argv, cwd, env, config: runtime.config });
   const { options, provider, schema, migrations, schemaPath, mode } = context;
 
@@ -364,9 +415,7 @@ function runCli(argv = process.argv.slice(2), runtime = {}) {
       env: buildExecEnv(commandArgs, cwd, env),
     });
 
-    if (result.error) {
-      throw result.error;
-    }
+    assertSpawnSucceeded(result, commandArgs.join(' '), commandTimeoutMs);
 
     return result.status ?? 1;
   }
@@ -379,14 +428,14 @@ function runCli(argv = process.argv.slice(2), runtime = {}) {
     env,
   });
 
-  if (result.error) {
-    throw result.error;
-  }
+  assertSpawnSucceeded(result, [prisma.command, ...prisma.argsPrefix, ...prismaArgs].join(' '), commandTimeoutMs);
 
   return result.status ?? 1;
 }
 
 module.exports = {
+  DEFAULT_COMMAND_TIMEOUT_MS,
+  resolveCommandTimeoutMs,
   absoluteSqliteUrl,
   appendSchemaArg,
   buildExecEnv,

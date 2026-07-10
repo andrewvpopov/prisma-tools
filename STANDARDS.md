@@ -1,5 +1,8 @@
 # Shared Package Standards
 
+> **Canonical source:** `agent_tools/knowledge/shared-package-standards.md`.
+> This file is a synced copy; change the canonical doc first.
+
 Reference for every `andrewpopov/*` package consumed across bewks, stoki,
 smarthome, sano-os, and kira (Kira epic BWK-84 / BWK-92). This repo
 (`prisma-tools`) is the pilot; new package repos copy `.github/workflows/ci.yml`
