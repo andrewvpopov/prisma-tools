@@ -1,12 +1,9 @@
 # Shared Package Standards
 
-> **Canonical source:** `agent_tools/knowledge/shared-package-standards.md`.
-> This file is a synced copy; change the canonical doc first.
-
-Reference for every `andrewpopov/*` package consumed across bewks, stoki,
-smarthome, sano-os, and kira (Kira epic BWK-84 / BWK-92). This repo
-(`prisma-tools`) is the pilot; new package repos copy `.github/workflows/ci.yml`
-and `scripts/verify-pack.mjs` from here and adjust the require-smoke.
+Reference for every `andrewpopov/*` package shared across the author's
+applications. This repo (`prisma-tools`) is the pilot; new package repos copy
+`.github/workflows/ci.yml` and `scripts/verify-pack.mjs` from here and adjust
+the require-smoke.
 
 ## Distribution
 
@@ -93,12 +90,11 @@ change PR — not a separate post-merge commit.
    CHANGELOG entry — if they drift, the tag build goes red. Tags are immutable;
    if a tag is wrong, cut the next patch tag rather than moving it.
 4. In each consuming app: bump the `#vX.Y.Z` ref, reinstall, run the app's
-   affected flow (see the app's adoption ticket), note the version in the app
-   CHANGELOG.
+   affected flow, note the version in the app CHANGELOG.
 
-## The Pi deploy failure mode
+## The deploy-time resolution failure mode
 
-`npm ci` on the Raspberry Pi now reaches GitHub to resolve `github:` deps at
-deploy time. `deploy-kit` (BWK-86) must prefer lockfile/offline-cache installs
-and degrade gracefully when GitHub is unreachable, so a GitHub outage cannot
-break a deploy that changes no dependencies.
+`npm ci` in a deploy environment reaches GitHub to resolve `github:` deps at
+deploy time. Deploy tooling should prefer lockfile/offline-cache installs and
+degrade gracefully when GitHub is unreachable, so a GitHub outage cannot break
+a deploy that changes no dependencies.

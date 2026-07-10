@@ -38,7 +38,7 @@ For deployment environments that should not require Git/SSH credentials, pin
 the public GitHub archive URL for the same tag instead:
 
 ```sh
-npm install https://github.com/andrewpopov/prisma-tools/archive/refs/tags/v0.3.0.tar.gz
+npm install https://github.com/andrewpopov/prisma-tools/archive/refs/tags/v0.4.0.tar.gz
 ```
 
 ## Expected Project Layout
