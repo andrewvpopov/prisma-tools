@@ -2,6 +2,7 @@
 
 ## 0.4.1
 
+- Add public contribution, support, and private vulnerability-reporting policies.
 - Reject unrecognized explicit Prisma modes from programmatic configuration or
   configured environment keys rather than silently falling back to a default.
 - Add `npm run verify` for the local release gate.

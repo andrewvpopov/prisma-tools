@@ -307,3 +307,8 @@ npm run verify
 - Keep schema and migration paths explicit in config if your project layout does
   not match the defaults.
 - This package expects Prisma to be installed in the consuming project.
+
+## Project policies
+
+See [Contributing](./CONTRIBUTING.md), [Support](./SUPPORT.md), and the
+[Security Policy](./SECURITY.md). This package is licensed under [MIT](./LICENSE).

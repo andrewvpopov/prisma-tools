@@ -2,6 +2,7 @@
   "name": "@andrewpopov/prisma-tools",
   "version": "0.4.1",
   "description": "Reusable Prisma environment, schema, and command wrapper utilities",
+  "author": "Andrew Popov",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "engines": {
@@ -11,6 +12,8 @@
     "type": "git",
     "url": "https://github.com/andrewpopov/prisma-tools.git"
   },
+  "bugs": { "url": "https://github.com/andrewpopov/prisma-tools/issues" },
+  "homepage": "https://github.com/andrewpopov/prisma-tools#readme",
   "bin": {
     "prisma-tools": "src/cli.js"
   },
