@@ -77,6 +77,9 @@ Mode resolution:
 - If no explicit mode is set, `NODE_ENV=production` means production mode.
 - Otherwise the default mode is development.
 
+An explicit mode outside `dev`, `development`, `prod`, or `production` is a
+configuration error; it never silently falls back to another environment.
+
 Env file loading:
 
 - `.env` is loaded first.
@@ -289,6 +292,13 @@ tooling layer might:
   rather than ask it to grow that capability.
 
 ## Notes For Consumers
+
+## Verify locally
+
+```bash
+npm ci
+npm run verify
+```
 
 - Keep the dependency pinned to a released tag (`#vX.Y.Z`) or the matching
   archive URL.

@@ -113,14 +113,14 @@ function firstEnvValue(env, keys = []) {
 }
 
 function resolveMode(explicitMode, env = process.env, envKeys = DEFAULT_CONFIG.envKeys.mode) {
-  // Only recognized explicit values are normalized and returned directly; any
-  // other truthy value (e.g. a typo'd or app-specific mode string) is NOT an
-  // arbitrary mode — it falls through to env/NODE_ENV resolution below.
   if (explicitMode === 'prod' || explicitMode === 'production') {
     return 'prod';
   }
   if (explicitMode === 'dev' || explicitMode === 'development') {
     return 'dev';
+  }
+  if (explicitMode) {
+    throw new Error(`Unsupported explicit Prisma mode "${explicitMode}". Expected dev, development, prod, or production.`);
   }
 
   const envMode = firstEnvValue(env, envKeys);
@@ -129,6 +129,9 @@ function resolveMode(explicitMode, env = process.env, envKeys = DEFAULT_CONFIG.e
   }
   if (envMode === 'dev' || envMode === 'development') {
     return 'dev';
+  }
+  if (envMode) {
+    throw new Error(`Unsupported explicit Prisma mode "${envMode}". Expected dev, development, prod, or production.`);
   }
 
   return env.NODE_ENV === 'production' ? 'prod' : 'dev';

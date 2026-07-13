@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+- Reject unrecognized explicit Prisma modes from programmatic configuration or
+  configured environment keys rather than silently falling back to a default.
+- Add `npm run verify` for the local release gate.
+
 All notable changes to `@andrewpopov/prisma-tools`. Versions are git tags
 (`vX.Y.Z`); see STANDARDS.md.
 
