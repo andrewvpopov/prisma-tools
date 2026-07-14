@@ -77,6 +77,9 @@ Mode resolution:
 - If no explicit mode is set, `NODE_ENV=production` means production mode.
 - Otherwise the default mode is development.
 
+An explicit mode outside `dev`, `development`, `prod`, or `production` is a
+configuration error; it never silently falls back to another environment.
+
 Env file loading:
 
 - `.env` is loaded first.
@@ -290,6 +293,13 @@ tooling layer might:
 
 ## Notes For Consumers
 
+## Verify locally
+
+```bash
+npm ci
+npm run verify
+```
+
 - Keep the dependency pinned to a released tag (`#vX.Y.Z`) or the matching
   archive URL.
 - Re-run `npm install` in each consuming app after changing the pin.
@@ -297,3 +307,8 @@ tooling layer might:
 - Keep schema and migration paths explicit in config if your project layout does
   not match the defaults.
 - This package expects Prisma to be installed in the consuming project.
+
+## Project policies
+
+See [Contributing](./CONTRIBUTING.md), [Support](./SUPPORT.md), and the
+[Security Policy](./SECURITY.md). This package is licensed under [MIT](./LICENSE).

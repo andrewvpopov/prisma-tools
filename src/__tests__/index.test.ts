@@ -293,6 +293,13 @@ describe('parseArgs', () => {
   });
 });
 
+describe('resolveMode strict explicit values', () => {
+  it('rejects invalid programmatic and environment modes instead of silently falling back', () => {
+    expect(() => resolveMode('staging', {})).toThrow(/Unsupported explicit Prisma mode "staging"/);
+    expect(() => resolveMode(undefined, { PRISMA_ENV: 'preview' })).toThrow(/Unsupported explicit Prisma mode "preview"/);
+  });
+});
+
 describe('providerFromUrl additional cases', () => {
   it('throws on an unsupported DATABASE_URL scheme', () => {
     expect(() => providerFromUrl('mysql://user@host/db', {})).toThrow(/Unsupported DATABASE_URL/);
@@ -513,10 +520,10 @@ describe('resolveMode explicit-mode normalization', () => {
     expect(resolveMode('dev')).toBe('dev');
   });
 
-  it('falls an unrecognized explicit mode through to env/NODE_ENV resolution', () => {
-    expect(resolveMode('staging', { NODE_ENV: 'production' })).toBe('prod');
-    expect(resolveMode('staging', {})).toBe('dev');
-    expect(resolveMode('staging', { PRISMA_ENV: 'prod' })).toBe('prod');
+  it('rejects an unrecognized explicit mode rather than falling through to another environment', () => {
+    expect(() => resolveMode('staging', { NODE_ENV: 'production' })).toThrow(/Unsupported explicit Prisma mode/);
+    expect(() => resolveMode('staging', {})).toThrow(/Unsupported explicit Prisma mode/);
+    expect(() => resolveMode('staging', { PRISMA_ENV: 'prod' })).toThrow(/Unsupported explicit Prisma mode/);
   });
 });
 
