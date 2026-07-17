@@ -10,10 +10,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/andrewpopov/prisma-tools.git"
+    "url": "git+https://github.com/andrewpopov/prisma-tools.git"
   },
   "bugs": { "url": "https://github.com/andrewpopov/prisma-tools/issues" },
   "homepage": "https://github.com/andrewpopov/prisma-tools#readme",
+  "keywords": [
+    "prisma",
+    "cli",
+    "sqlite",
+    "postgres",
+    "environment",
+    "wrapper"
+  ],
   "bin": {
     "prisma-tools": "src/cli.js"
   },
