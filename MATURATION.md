@@ -43,9 +43,8 @@ entry), branch protection, immutable-tag policy, a genuinely good 278-line
 README, dependency-injected internals (`fs`/`spawnSync`/`stdout` overridable)
 that make the code very testable.
 
-**Missing:** test coverage for roughly half the exported surface (§2), four
-exports absent from `index.d.ts` (§3), a stale install section in the README
-(§3), zero Windows coverage despite win32-specific code paths (§5), and only
+**Missing:** test coverage for roughly half the exported surface (§2), zero
+Windows coverage despite win32-specific code paths (§5), and only
 **one adopter** — bewks, via its `scripts/tools/prisma-db.js` shim pinned to
 `#v0.2.3` (§7).
 
@@ -104,15 +103,11 @@ the module is small enough that ~95% lines is realistic.
   mandates `#vX.Y.Z` tag pins and bewks actually pins `#v0.2.3`. Fix the
   README to lead with tag pins; keep the archive-URL variant as the
   no-git-credentials fallback (it's the Pi deploy story).
-- **`index.d.ts` is incomplete**: `defaultSqliteUrl`,
-  `ensureSqliteDatabaseFile`, `loadEnvFile`, `sqliteDatabasePath` are
-  exported from `index.js` but missing from the declarations;
-  `ResolvedPrismaToolsContext` omits the `options` field `resolveContext`
-  actually returns; `runCli`'s `runtime` is typed `object` — give it a real
-  `PrismaToolsRuntime` interface (`cwd`, `env`, `fs`, `spawnSync`, `stdout`,
-  `config`). `verify-pack` asserts the types file *ships*; consider a
-  `tsc --noEmit` check over a typed consumer snippet so it also stays
-  *accurate*.
+- **`index.d.ts` is complete** (resolved 2026-07-16): all 19 runtime exports
+  are declared, `ResolvedPrismaToolsContext` carries `options`, and `runCli`'s
+  runtime is a real `PrismaToolsRuntime` interface. `verify-pack` asserts the
+  types file *ships*; consider a `tsc --noEmit` check over a typed consumer
+  snippet so it also stays *accurate*.
 - Otherwise README is strong: layout, env rules, CLI usage, the bewks-style
   compatibility-shim pattern, and full config reference are all documented.
   One omission: the fact that `resolveContext`/`runCli` **mutate the passed
@@ -203,8 +198,8 @@ adds nothing), and STANDARDS says keep engine packages near zero-dep.
 **P0 — correctness of what's already shipped**
 1. Fix README install section: lead with `#vX.Y.Z` tag pins per STANDARDS.md;
    demote archive-URL to the credentials-free fallback.
-2. Complete `index.d.ts`: add the 4 missing exports, `options` on
-   `ResolvedPrismaToolsContext`, a real `runtime` type for `runCli`.
+2. ~~Complete `index.d.ts`~~ — done (all exports declared, `options` present,
+   `PrismaToolsRuntime` typed).
 3. Add tests for the untested exports: `parseArgs`, `loadEnvFile`,
    `sqliteDatabasePath` (query strings, `:memory:`), `ensureSqliteDatabaseFile`,
    `providerFromUrl` throw path, `PRISMA_ENV_FILE`, exec error/exit-code paths.
